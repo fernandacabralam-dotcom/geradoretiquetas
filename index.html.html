@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Etiquetas</title>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+
+body{
+  font-family: Arial;
+  background:#f5f5f5;
+  margin:0;
+  padding:0;
+}
+
+.painel{
+  background:white;
+  padding:15px;
+  width:650px;
+  border:1px solid #ccc;
+  margin-bottom:20px;
+}
+
+.campo{
+  margin-top:10px;
+}
+
+button{
+  margin-top:10px;
+  padding:10px 15px;
+  cursor:pointer;
+}
+
+.erro{
+  background:#ffe5e5;
+  border:1px solid red;
+  padding:10px;
+  margin-top:10px;
+  display:none;
+}
+
+.container{
+  width:100%;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:12px;
+  align-items:start;
+  justify-items:center;
+}
+
+.etiqueta{
+
+  width:160mm;
+
+  margin:0;
+
+  background:white;
+
+  border:1px solid #000;
+
+  box-sizing:border-box;
+
+  padding-bottom:6px;
+
+  overflow:hidden;
+
+}
+
+.label{
+  width:120px;
+  font-weight:bold;
+  padding:5px;
+  background:#f2f2f2;
+}
+
+.volume{
+
+  font-size:28px;
+
+  font-weight:bold;
+
+  padding:10px;
+
+  display:flex;
+
+  justify-content:flex-end;
+
+  align-items:center;
+
+  gap:8px;
+
+}
+
+.volume .campo{
+  width:auto;
+}
+.volume .valor{
+  flex:none;
+}
+.volume .valor{
+  font-size:28px;
+}
+
+@media print{
+
+  @page{
+    size:A4 portrait;
+    margin:10mm;
+  }
+
+  body{
+    background:white;
+    margin:0;
+    padding:0;
+  }
+
+  .painel{
+    display:none;
+  }
+
+  .container{
+  width:100%;
+
+  display:grid;
+
+  grid-template-columns: 1fr;
+
+  gap:12px;
+
+  align-items:start;
+
+  justify-items:center;
+}
+
+  .etiqueta{
+
+  width:140mm;
+
+  min-height:auto;
+
+  break-inside: avoid;
+
+  page-break-inside: avoid;
+
+}
+
+body{
+  overflow:hidden;
+}
+
+}
+
+.etiqueta-box{
+  width:100%;
+  border:none;
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  background:#fff;
+}
+
+.titulo{
+
+  text-align:center;
+
+  font-weight:300;
+
+  font-size:24px;
+
+  padding:12px;
+
+  border-bottom:1px solid #000;
+
+  letter-spacing:1px;
+
+}
+
+.linha{
+  display:flex;
+  align-items:center;
+  padding:0;
+}
+
+.campo{
+
+  width:85px;
+
+  font-weight:bold;
+
+  padding:1px 3px;
+
+  background:#fff;
+
+}
+
+.valor{
+
+  flex:1;
+
+  padding:1px 3px;
+
+  font-size:16px;
+
+  line-height:1.2;
+
+}
+
+.secao{
+  border-top:1px solid #ccc;
+  padding:2px 0;
+}
+
+.barcode + .secao{
+  border-top:none;
+}
+
+.barcode{
+  text-align:center;
+  padding:8px;
+  border-bottom:1px solid #000;
+  background:#fff;
+}
+.destaque .campo{
+  font-size:14px;
+}
+
+.destaque .valor{
+  font-size:18px;
+  font-weight:bold;
+  letter-spacing:1px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="painel">
+
+<h2>Gerador de Etiquetas</h2>
+
+<div class="campo">
+Romaneio:
+<input type="file" id="excelFile">
+</div>
+
+<div class="campo">
+XMLs:
+<input type="file" id="xmlFile" multiple>
+</div>
+
+<button onclick="gerarEtiqueta()">Gerar Etiquetas</button>
+<button onclick="window.print()">Imprimir</button>
+
+<div class="erro" id="erroBox"></div>
+
+</div>
+
+<div id="container" class="container">
+
+  <div class="etiqueta">
+
+    <div class="etiqueta-box">
+
+      <div class="titulo">WESTWING - DS HÍBRIDO</div>
+
+      <div class="linha destaque">
+        <div class="campo">NF:</div>
+        <div class="valor">123456</div>
+      </div>
+
+      <div class="linha destaque">
+        <div class="campo">Pedido:</div>
+        <div class="valor">987654</div>
+      </div>
+
+      <div class="barcode">
+        TESTE BARCODE
+      </div>
+
+      <div class="secao">
+
+        <div class="linha">
+          <div class="campo">Destinatário:</div>
+          <div class="valor">Cliente Exemplo LTDA</div>
+        </div>
+
+        <div class="linha">
+          <div class="campo">Endereço:</div>
+          <div class="valor">
+            Rua das Flores, 123
+          </div>
+        </div>
+
+        <div class="linha">
+          <div class="campo">Bairro:</div>
+          <div class="valor">Centro</div>
+        </div>
+
+        <div class="linha">
+
+          <div class="campo">Cidade:</div>
+          <div class="valor">São Paulo/SP</div>
+
+          <div class="campo">CEP:</div>
+          <div class="valor">01234-567</div>
+
+        </div>
+
+      </div>
+
+      <div class="secao">
+
+        <div class="linha">
+          <div class="campo">Remetente:</div>
+          <div class="valor">Fornecedor Exemplo</div>
+        </div>
+
+        <div class="linha">
+          <div class="campo">Endereço:</div>
+          <div class="valor">
+            Av Industrial, 500
+          </div>
+        </div>
+
+        <div class="linha">
+          <div class="campo">Bairro:</div>
+          <div class="valor">Distrito Industrial</div>
+        </div>
+
+        <div class="linha">
+
+          <div class="campo">Cidade:</div>
+          <div class="valor">Extrema/MG</div>
+
+          <div class="campo">CEP:</div>
+          <div class="valor">37640-000</div>
+
+        </div>
+
+        <div class="linha volume">
+          <div class="campo">Volume:</div>
+          <div class="valor">1/2</div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+let mapaPedidos = {}
+let lista = []
+
+// ======================
+// EXCEL
+// ======================
+document.getElementById("excelFile").addEventListener("change", function(e){
+
+  const file = e.target.files[0]
+  const reader = new FileReader()
+
+  reader.onload = function(ev){
+
+    const data = new Uint8Array(ev.target.result)
+    const workbook = XLSX.read(data, {type:"array"})
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]
+
+    const json = XLSX.utils.sheet_to_json(sheet,{
+      header:1,
+      defval:""
+    })
+
+    mapaPedidos = {}
+
+    for(let i = 1; i < json.length; i++){
+
+      const row = json[i]
+
+      const pedido = String(row[1] || "").trim()
+      const nf = String(row[2] || "").trim()
+      const volumes = String(row[3] || "1").trim()
+
+      if(nf && pedido){
+        mapaPedidos[nf] = { pedido, volumes }
+      }
+    }
+
+    alert("Excel carregado com sucesso!")
+
+  }
+
+  reader.readAsArrayBuffer(file)
+
+})
+
+// ======================
+// XML
+// ======================
+document.getElementById("xmlFile").addEventListener("change", async function(e){
+
+  if(Object.keys(mapaPedidos).length === 0){
+    alert("Carregue o romaneio Excel antes dos XMLs")
+    return
+  }
+
+  const files = e.target.files
+  lista = []
+  const nfsProcessadas = new Set()
+const errosImportacao = []
+
+  for(let file of files){
+
+    const xmlText = await file.text()
+    const xmlDoc = new DOMParser().parseFromString(xmlText,"text/xml")
+    if(xmlDoc.getElementsByTagName("parsererror").length > 0){
+   errosImportacao.push(`Arquivo ${file.name} possui XML inválido`)
+continue
+}
+
+    const nf = xmlDoc.getElementsByTagName("nNF")[0]?.textContent?.trim() || ""
+    if(nfsProcessadas.has(nf)){
+  errosImportacao.push(`NF ${nf} duplicada`)
+  continue
+}
+
+nfsProcessadas.add(nf)
+
+    const destNode = xmlDoc.getElementsByTagName("dest")[0]
+    const emitNode = xmlDoc.getElementsByTagName("emit")[0]
+
+    const dadosMapa = mapaPedidos[nf]
+
+    if(!dadosMapa){
+      errosImportacao.push(`NF ${nf} não encontrada no Excel`)
+    continue
+    }
+
+    const pedido = dadosMapa.pedido
+    const volumes = dadosMapa.volumes || 1
+
+    lista.push({
+
+      nf,
+      pedido,
+      volumes,
+
+      destNome: destNode?.getElementsByTagName("xNome")[0]?.textContent || "",
+      destRua: destNode?.getElementsByTagName("xLgr")[0]?.textContent || "",
+      destNumero: destNode?.getElementsByTagName("nro")[0]?.textContent || "",
+      destComplemento: destNode?.getElementsByTagName("xCpl")[0]?.textContent || "",
+      destCEP: destNode?.getElementsByTagName("CEP")[0]?.textContent ||
+               destNode?.getElementsByTagName("cep")[0]?.textContent || "",
+      destBairro: destNode?.getElementsByTagName("xBairro")[0]?.textContent || "",
+      destCidade: destNode?.getElementsByTagName("xMun")[0]?.textContent || "",
+      destUF: destNode?.getElementsByTagName("UF")[0]?.textContent || "",
+
+      emitNome: emitNode?.getElementsByTagName("xNome")[0]?.textContent || "",
+      emitRua: emitNode?.getElementsByTagName("xLgr")[0]?.textContent || "",
+      emitNumero: emitNode?.getElementsByTagName("nro")[0]?.textContent || "",
+      emitComplemento: emitNode?.getElementsByTagName("xCpl")[0]?.textContent || "",
+
+emitBairro: emitNode?.getElementsByTagName("xBairro")[0]?.textContent || "",
+
+emitCidade: emitNode?.getElementsByTagName("xMun")[0]?.textContent || "",
+
+emitUF: emitNode?.getElementsByTagName("UF")[0]?.textContent || "",
+
+emitCEP: emitNode?.getElementsByTagName("CEP")[0]?.textContent ||
+         emitNode?.getElementsByTagName("cep")[0]?.textContent || ""
+
+    })
+
+  }
+
+  alert("XMLs carregados!")
+
+})
+
+// ======================
+// VALIDAÇÃO
+// ======================
+function validar(){
+
+  const erros = []
+
+  if(lista.length === 0){
+    erros.push("Nenhum XML carregado")
+  }
+
+  lista.forEach(p => {
+
+    if(!p.nf) erros.push("NF ausente em algum XML")
+    if(!p.pedido) erros.push(`Pedido ausente na NF ${p.nf}`)
+    if(!p.volumes) erros.push(`Volumes ausente na NF ${p.nf}`)
+
+  })
+
+  return erros
+
+}
+
+// ======================
+// GERAR ETIQUETAS
+// ======================
+function gerarEtiqueta(){
+
+  const erros = validar()
+  const erroBox = document.getElementById("erroBox")
+
+  if(erros.length > 0){
+    erroBox.style.display = "block"
+    erroBox.innerHTML = "<b>Corrija antes:</b><br><br>" + erros.join("<br>")
+    return
+  }
+
+  erroBox.style.display = "none"
+
+  const container = document.getElementById("container")
+  container.innerHTML = ""
+
+  lista.forEach((p,i)=>{
+
+    const qtd = parseInt(p.volumes) || 1
+
+    for(let v=1; v<=qtd; v++){
+
+      const id = `${p.nf}-${i}-${v}`
+
+      const div = document.createElement("div")
+      div.className = "etiqueta"
+
+      div.innerHTML = `
+<div class="etiqueta-box">
+
+  <div class="titulo">WESTWING - DS HÍBRIDO</div>
+
+  <div class="linha destaque">
+  <div class="campo">NF:</div>
+  <div class="valor">${p.nf}</div>
+</div>
+
+<div class="linha destaque">
+  <div class="campo">Pedido:</div>
+  <div class="valor">${p.pedido}</div>
+</div>
+
+  <div class="barcode">
+    <svg id="b-${id}"></svg>
+  </div>
+
+  <div class="secao">
+
+    <div class="linha">
+      <div class="campo">Destinatário:</div>
+      <div class="valor">${p.destNome}</div>
+    </div>
+
+    <div class="linha">
+      <div class="campo">Endereço:</div>
+      <div class="valor">
+        ${p.destRua}, ${p.destNumero}
+        ${p.destComplemento ? " - " + p.destComplemento : ""}
+      </div>
+    </div>
+
+    <div class="linha">
+  <div class="campo">Bairro:</div>
+  <div class="valor">${p.destBairro}</div>
+</div>
+
+    <div class="linha">
+
+  <div class="campo">Cidade:</div>
+  <div class="valor">
+    ${p.destCidade}/${p.destUF}
+  </div>
+
+  <div class="campo">CEP:</div>
+  <div class="valor">
+    ${p.destCEP || ""}
+  </div>
+
+</div>
+
+</div>
+
+  <div class="secao">
+
+    <div class="linha">
+      <div class="campo">Remetente:</div>
+      <div class="valor">${p.emitNome}</div>
+    </div>
+
+    <div class="linha">
+      <div class="campo">Endereço:</div>
+      <div class="valor">
+        ${p.emitRua}, ${p.emitNumero}
+        ${p.emitComplemento ? " - " + p.emitComplemento : ""}
+      </div>
+    </div>
+
+    <div class="linha">
+  <div class="campo">Bairro:</div>
+  <div class="valor">${p.emitBairro}</div>
+</div>
+
+    <div class="linha">
+
+  <div class="campo">Cidade:</div>
+
+  <div class="valor">
+    ${p.emitCidade}/${p.emitUF}
+  </div>
+
+  <div class="campo">CEP:</div>
+
+  <div class="valor">
+    ${p.emitCEP || ""}
+  </div>
+
+</div>
+
+    <div class="linha volume">
+      <div class="campo">Volume:</div>
+      <div class="valor">${v}/${qtd}</div>
+    </div>
+
+  </div>
+
+</div>
+`
+
+      container.appendChild(div)
+
+      JsBarcode(`#b-${id}`, String(p.pedido), {
+        format:"CODE128",
+        width:2,
+        height:60,
+        displayValue:false
+      })
+
+    }
+
+  })
+
+}
+
+</script>
+
+</body>
+</html>
