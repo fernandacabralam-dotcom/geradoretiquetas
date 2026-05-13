@@ -10,6 +10,10 @@
 
 <style>
 
+    html, body{
+  width:100%;
+}
+
 body{
   font-family: Arial;
   background:#f5f5f5;
@@ -45,29 +49,33 @@ button{
 
 .container{
   width:100%;
-  display:grid;
-  grid-template-columns: 1fr;
+
+  display:flex;
+  flex-direction:column;
+
+  align-items:center;
+
   gap:12px;
-  align-items:start;
-  justify-items:center;
+
+  margin-top:4mm;
 }
 
 .etiqueta{
-
-  width:160mm;
-
-  margin:0;
+  width:130mm;
 
   background:white;
 
-  border:1px solid #000;
-
   box-sizing:border-box;
 
-  padding-bottom:6px;
+  overflow:visible;
 
-  overflow:hidden;
+  display:block;
 
+  position:relative;
+
+  outline:1px solid #000;
+
+  outline-offset:-1px;
 }
 
 .label{
@@ -79,7 +87,7 @@ button{
 
 .volume{
 
-  font-size:28px;
+  font-size:20px;
 
   font-weight:bold;
 
@@ -102,10 +110,15 @@ button{
   flex:none;
 }
 .volume .valor{
-  font-size:28px;
+  font-size:18px;
 }
 
 @media print{
+
+    *{
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 
   @page{
     size:A4 portrait;
@@ -125,7 +138,8 @@ button{
   .container{
   width:100%;
 
-  display:grid;
+  display:flex;
+flex-direction:column;
 
   grid-template-columns: 1fr;
 
@@ -134,11 +148,12 @@ button{
   align-items:start;
 
   justify-items:center;
+
 }
 
   .etiqueta{
 
-  width:140mm;
+  width:135mm;
 
   min-height:auto;
 
@@ -146,10 +161,6 @@ button{
 
   page-break-inside: avoid;
 
-}
-
-body{
-  overflow:hidden;
 }
 
 }
@@ -168,11 +179,11 @@ body{
 
   font-weight:300;
 
-  font-size:24px;
+  font-size:21px;
 
   padding:12px;
 
-  border-bottom:1px solid #000;
+  border-bottom:0.7px solid #000;
 
   letter-spacing:1px;
 
@@ -202,25 +213,21 @@ body{
 
   padding:1px 3px;
 
-  font-size:16px;
+  font-size:12px;
 
   line-height:1.2;
 
 }
 
 .secao{
-  border-top:1px solid #ccc;
+  border-top:0.7px solid #ccc;
   padding:2px 0;
 }
 
-.barcode + .secao{
-  border-top:none;
-}
 
 .barcode{
   text-align:center;
-  padding:8px;
-  border-bottom:1px solid #000;
+  padding:7px;
   background:#fff;
 }
 .destaque .campo{
@@ -228,7 +235,7 @@ body{
 }
 
 .destaque .valor{
-  font-size:18px;
+  font-size:16px;
   font-weight:bold;
   letter-spacing:1px;
 }
@@ -368,35 +375,159 @@ document.getElementById("excelFile").addEventListener("change", function(e){
   const file = e.target.files[0]
   const reader = new FileReader()
 
-  reader.onload = function(ev){
+reader.onload = function(ev){
 
-    const data = new Uint8Array(ev.target.result)
-    const workbook = XLSX.read(data, {type:"array"})
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
+  const data = new Uint8Array(ev.target.result)
+  const workbook = XLSX.read(data, {type:"array"})
 
-    const json = XLSX.utils.sheet_to_json(sheet,{
-      header:1,
-      defval:""
-    })
+  let json = null
+  let abaEncontrada = ""
 
-    mapaPedidos = {}
+  // ======================
+// PROCURA ABA + LINHA DO CABEÇALHO
+// ======================
 
-    for(let i = 1; i < json.length; i++){
+let linhaCabecalho = -1
 
-      const row = json[i]
+for(const nomeAba of workbook.SheetNames){
 
-      const pedido = String(row[1] || "").trim()
-      const nf = String(row[2] || "").trim()
-      const volumes = String(row[3] || "1").trim()
+  const tentativaSheet = workbook.Sheets[nomeAba]
 
-      if(nf && pedido){
-        mapaPedidos[nf] = { pedido, volumes }
-      }
+  const tentativaJson = XLSX.utils.sheet_to_json(tentativaSheet,{
+    header:1,
+    defval:""
+  })
+
+  if(tentativaJson.length === 0){
+    continue
+  }
+
+  // percorre várias linhas procurando cabeçalho
+  for(let l = 0; l < tentativaJson.length; l++){
+
+    const linhaTexto = tentativaJson[l]
+      .join(" ")
+      .toLowerCase()
+
+    const temPedido = linhaTexto.includes("pedido")
+
+    const temNF =
+      linhaTexto.includes("nf") ||
+      linhaTexto.includes("nota")
+
+    if(temPedido && temNF){
+
+      json = tentativaJson
+      abaEncontrada = nomeAba
+      linhaCabecalho = l
+
+      break
     }
 
-    alert("Excel carregado com sucesso!")
+  }
+
+  if(json){
+    break
+  }
+
+}
+
+  // ======================
+  // VALIDA ABA
+  // ======================
+
+  if(!json){
+
+    alert(`
+Não foi possível encontrar uma aba válida no Excel.
+
+O arquivo precisa conter colunas como:
+- Pedido
+- NF ou Nota Fiscal
+- Volume
+    `)
+
+    return
+  }
+
+  // ======================
+  // IDENTIFICA COLUNAS
+  // ======================
+
+  const headers = json[linhaCabecalho].map(h =>
+    String(h).trim().toLowerCase()
+  )
+
+  const colPedido = headers.findIndex(h =>
+    h.includes("pedido")
+  )
+
+  const colNF = headers.findIndex(h =>
+    h.includes("nf") ||
+    h.includes("nota")
+  )
+
+  const colVolumes = headers.findIndex(h =>
+    h.includes("volume")
+  )
+
+  // ======================
+  // VALIDA COLUNAS
+  // ======================
+
+  if(colPedido === -1 || colNF === -1){
+
+    alert(`
+Não foi possível identificar automaticamente as colunas:
+
+- Pedido
+- NF
+
+Verifique o Excel.
+    `)
+
+    return
+  }
+
+  mapaPedidos = {}
+
+  // ======================
+  // LEITURA DAS LINHAS
+  // ======================
+
+  for(let i = linhaCabecalho + 1; i < json.length; i++){
+
+    const row = json[i]
+
+    const pedido = String(row[colPedido] || "").trim()
+
+    const nf = String(row[colNF] || "").trim()
+
+    const volumes = String(
+      row[colVolumes] || "1"
+    ).trim()
+
+    if(nf && pedido){
+
+      mapaPedidos[nf] = {
+        pedido,
+        volumes
+      }
+
+    }
 
   }
+
+  alert(`
+Excel carregado com sucesso!
+
+Aba encontrada:
+${abaEncontrada}
+
+${Object.keys(mapaPedidos).length} pedidos importados.
+  `)
+
+}
 
   reader.readAsArrayBuffer(file)
 
